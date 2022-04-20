@@ -1,0 +1,135 @@
+local bindable = Instance.new("BindableFunction")
+function bindable.OnInvoke()
+	local Name = tostring(game.Players.LocalPlayer)
+	local camera = workspace.CurrentCamera
+	getgenv().Toggle = true
+
+	local function round(n)
+		return math.floor(n + 0.5)
+	end
+
+	local function DrawDrop(drop)
+
+		local DropText = Drawing.new("Text")
+		DropText.Visible = false
+		DropText.Center = true
+		DropText.Outline = true
+		DropText.Font = 2
+		DropText.Size = 20
+		DropText.Color = Color3.new(50, 50, 50)
+		DropText.Text = "Crate"
+
+		local Part = Instance.new("Part")
+		Part.Size = Vector3.new(0.1, 0.1, 0.1)
+		Part.Transparency = 1
+		Part.Anchored = true
+		Part.Parent = drop
+		Part.CanCollide = false
+		Part.Position = drop.Position + Vector3.new(0, -0.35, 0)
+
+		local BoxHandleAdornment = Instance.new("BoxHandleAdornment")
+		BoxHandleAdornment.Color3 = Color3.new(255, 255, 255)
+		BoxHandleAdornment.Transparency = 0.1
+		BoxHandleAdornment.AlwaysOnTop = true
+		BoxHandleAdornment.ZIndex = 10
+		BoxHandleAdornment.Parent = drop
+		BoxHandleAdornment.Adornee = Part
+		BoxHandleAdornment.Size = Vector3.new(0.3, 0.3, 0.3)
+		BoxHandleAdornment.Visible = false
+
+		local DistanceText = Drawing.new("Text")
+		DistanceText.Visible = false
+		DistanceText.Center = true
+		DistanceText.Outline = true
+		DistanceText.Font = 2
+		DistanceText.Size = 15
+		DistanceText.Color = Color3.new(50, 50, 50)
+		DistanceText.Text = "Distance: "
+
+		local Airport = Drawing.new("Text")
+		Airport.Visible = false
+		Airport.Center = true
+		Airport.Outline = true
+		Airport.Font = 2
+		Airport.Size = 12
+		Airport.Color = Color3.new(50, 50, 50)
+		Airport.Text = ""
+
+		local function UPDATER()
+			local c
+			c = game:GetService("RunService").RenderStepped:Connect(function()
+				if Toggle then
+					if drop then
+						if drop.Transparency == 1 then
+							DropText.Visible = false
+							DistanceText.Visible = false
+							Airport.Visible = false
+							BoxHandleAdornment.Visible = false
+						else
+							BoxHandleAdornment.Visible = true
+							local dropvector, onscreen = camera:WorldToViewportPoint(drop.Position)
+
+							if onscreen then
+								DropText.Position = Vector2.new(dropvector.X, dropvector.Y + 5)
+								DropText.Visible = true
+								DistanceText.Position  = Vector2.new(dropvector.X, dropvector.Y + 22)
+								DistanceText.Text = "Distance:".. round((drop.Position - game.Workspace[Name].Head.Position).Magnitude)
+								DistanceText.Visible = true
+								Airport.Position  = Vector2.new(dropvector.X, dropvector.Y + 37)
+								local IslandString = string.gsub(drop.Parent.Name,' Crates','')
+								Airport.Text = IslandString
+								Airport.Visible = true
+							else
+								DropText.Visible = false
+								DistanceText.Visible = false
+								Airport.Visible = false
+							end
+						end
+					end
+				else
+					BoxHandleAdornment.Visible = false
+					DropText.Visible = false
+					DistanceText.Visible = false
+					Airport.Visible = false
+				end
+			end)
+		end
+		coroutine.wrap(UPDATER)()
+	end
+
+	for i,drop in pairs(game:GetService("Workspace").GrandWorkspace.Scenery.KitCrates:GetDescendants()) do
+		if drop.Name == "CratePart" then
+			drop.Name = "CratePartD"
+			coroutine.wrap(DrawDrop)(drop)
+		end
+	end
+
+	spawn(function()
+		while wait(5) do
+			for i,drop in pairs(game:GetService("Workspace").GrandWorkspace.Scenery.KitCrates:GetDescendants()) do
+				if drop.Name == "CratePart" then
+					drop.Name = "CratePartD"
+					coroutine.wrap(DrawDrop)(drop)
+				end
+			end
+		end
+	end)
+
+	game.Players.LocalPlayer:GetMouse().KeyDown:Connect(function(KeyPressed)
+		if KeyPressed == "f" then
+			if Toggle then
+				Toggle = false
+			else
+				Toggle = true
+			end
+		end
+	end)
+end
+
+game.StarterGui:SetCore("SendNotification", {
+	Title = "Info";
+	Text = "Toggle On/Off with 'f'";
+    Callback = bindable;
+    Button1 = "Understood";
+    Duration = math.huge
+})
